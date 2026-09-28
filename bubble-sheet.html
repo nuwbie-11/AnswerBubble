@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bubble Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4f0e6; --panel:#fbf8f1; --ink:#191713; --pencil:#6e6759;
+  --line:#d8d1c0; --mark:#a33a26; --good:#3f6b45; --bad:#a33a26; --blank:#8d8067;
+  --focus:#efe6d3;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#14130f; --panel:#1c1a15; --ink:#ece7db; --pencil:#9c9484;
+    --line:#33302a; --mark:#d4644b; --good:#7fb08a; --bad:#d4644b; --blank:#6e6553;
+    --focus:#25231c;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font:400 16px/1.5 "Source Serif 4",Georgia,serif;
+  padding:calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+          calc(48px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+}
+.wrap{max-width:720px;margin:0 auto}
+.mono,button,input,select,textarea,.pill,.tag-pill,.qn,.glab,.b,.mk,.key-tip{font-family:"IBM Plex Mono",ui-monospace,monospace}
+h1{font-size:26px;font-weight:600;margin:0}
+h2{font-size:21px;font-weight:600;margin:0}
+.tag{margin:2px 0 0;font-size:14px;color:var(--pencil)}
+.rule{border:0;border-top:1px solid var(--line);margin:16px 0}
+.hidden{display:none!important}
+
+/* buttons */
+button{
+  font-size:13px;color:var(--ink);background:transparent;
+  border:1px solid var(--line);border-radius:2px;padding:8px 12px;cursor:pointer;
+}
+button:hover{border-color:var(--pencil)}
+button:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
+.primary{border-color:var(--ink);font-weight:500}
+.danger{color:var(--mark);border-color:var(--mark)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* filters */
+.filter-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 6px}
+.filter-label{font-size:12px;color:var(--pencil);margin-right:4px}
+.tag-btn{
+  font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);
+  color:var(--pencil);background:transparent;
+}
+.tag-btn.active{border-color:var(--ink);color:var(--ink);font-weight:500;background:var(--panel)}
+
+/* home list */
+.sess{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  padding:12px 0;border:0;border-top:1px solid var(--line);border-radius:0;
+}
+.sess:hover{background:var(--panel)}
+.sess .t{font-size:17px}
+.sess .m{font-size:12px;color:var(--pencil);margin-top:2px}
+.sess .badges{margin-left:auto;display:flex;align-items:center;gap:6px;flex:none}
+.pill,.tag-pill{
+  font-size:11px;letter-spacing:.02em;border:1px solid var(--line);
+  border-radius:999px;padding:3px 8px;color:var(--pencil);white-space:nowrap;
+}
+.pill.full{color:var(--good);border-color:var(--good)}
+.tag-pill{border-style:dashed}
+.empty{color:var(--pencil);font-size:15px;padding:24px 0;border-top:1px solid var(--line)}
+
+/* form */
+label{display:block;font-size:12px;color:var(--pencil);margin:14px 0 4px;letter-spacing:.04em}
+input,select,textarea{
+  width:100%;font-size:15px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:2px;padding:9px 10px;
+}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--mark);outline-offset:1px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* session view */
+.shead{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.shead .grow{flex:1 1 240px;min-width:0}
+#score{font-size:12px;color:var(--pencil);margin:6px 0 0}
+.back{font-size:12px;color:var(--pencil);background:none;border:0;padding:0 0 10px;letter-spacing:.04em}
+
+.q{
+  display:grid;grid-template-columns:2.75rem minmax(0,1fr) auto;
+  align-items:center;gap:8px;padding:9px 8px;border-top:1px solid var(--line);
+  border-radius:4px;
+}
+.q.active-q{background:var(--focus);outline:1px solid var(--line)}
+#rows.checked .q{grid-template-columns:2.75rem minmax(0,1fr) minmax(0,1fr) auto}
+.qn{text-align:right;font-size:13px;color:var(--pencil);cursor:pointer;user-select:none}
+.grp{display:flex;align-items:center;gap:8px;min-width:0}
+.glab{flex:none;width:2.5rem;font-size:11px;color:var(--pencil);letter-spacing:.06em}
+.bub{display:flex;flex-wrap:wrap;gap:6px}
+.b{
+  width:30px;height:30px;padding:0;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:12px;color:var(--pencil);background:transparent;
+}
+.b.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.b.m-good{background:var(--good);border-color:var(--good);color:var(--paper)}
+.b.m-bad{background:var(--bad);border-color:var(--bad);color:var(--paper)}
+.mk{flex:none;font-size:14px;width:1.1rem;text-align:center}
+.mk.good{color:var(--good)} .mk.bad{color:var(--bad)} .mk.blank{color:var(--blank)}
+
+/* notes */
+.note-btn{
+  border:none;background:transparent;color:var(--pencil);padding:4px 6px;
+  font-size:12px;cursor:pointer;opacity:0.6;
+}
+.note-btn:hover,.note-btn.has-note{opacity:1;color:var(--ink)}
+.note-btn.has-note{font-weight:bold}
+.note-box{
+  grid-column:1 / -1;padding:4px 0 8px 3rem;
+}
+.note-box textarea{
+  font-size:13px;line-height:1.4;padding:6px 8px;min-height:48px;
+  resize:vertical;background:var(--panel);
+}
+
+.legend{font-size:11px;color:var(--pencil);margin-top:10px;line-height:1.6}
+.key-tip{display:inline-block;padding:1px 5px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
+
+/* modal */
+.modal-backdrop{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;
+  padding:16px;z-index:99;
+}
+.modal{
+  background:var(--paper);border:1px solid var(--line);
+  max-width:500px;width:100%;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.15);
+}
+
+@media (max-width:560px){
+  .q{grid-template-columns:2.25rem minmax(0,1fr) auto;row-gap:4px}
+  #rows.checked .qn{grid-row:1 / span 2;align-self:start;padding-top:8px}
+  #rows.checked .grp:last-of-type{border-top:1px solid var(--line);padding-top:7px;margin-top:3px}
+  .note-box{padding-left:0}
+  .row2,.row3{grid-template-columns:1fr}
+}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* timer bar */
+.timer-pill{
+  font-size:12px;font-weight:500;padding:4px 10px;border-radius:999px;
+  border:1px solid var(--pencil);color:var(--pencil);letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.timer-pill.running{color:var(--ink);border-color:var(--ink);background:var(--panel)}
+.timer-pill.warning{color:var(--mark);border-color:var(--mark);background:var(--panel)}
+.timer-pill.ended{color:var(--bad);border-color:var(--bad);font-weight:600}
+.time-btn{font-size:11px;padding:3px 8px;border-radius:3px}
+.time-box{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+
+.ended-banner{
+  background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--mark);
+  padding:10px 14px;margin-bottom:14px;font-size:13px;display:flex;align-items:center;justify-content:space-between;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HOME -->
+  <section id="v-home">
+    <h1>Bubble Sheet</h1>
+    <p class="tag">Your answer storage sheet for exams, tryouts &amp; practice.</p>
+    <div class="actions" style="margin-top:16px">
+      <button class="primary" id="new-btn">+ New session</button>
+      <button id="import-btn">Import</button>
+      <button id="export-btn">Export</button>
+      <input type="file" id="import-file" accept="application/json,.json" class="hidden">
+    </div>
+    <div id="filter-bar" class="filter-bar hidden"></div>
+    <hr class="rule">
+    <div id="list"></div>
+  </section>
+
+  <!-- NEW -->
+  <section id="v-new" class="hidden">
+    <button class="back" data-go="home">&larr; Back</button>
+    <h2>New session</h2>
+    <form id="new-form" novalidate>
+      <label for="f-title">Title</label>
+      <input id="f-title" autocomplete="off" placeholder="e.g. Try Out 1 - TPS SNBT">
+      <div class="row2">
+        <div>
+          <label for="f-test">Subject / Tag</label>
+          <input id="f-test" autocomplete="off" placeholder="e.g. TPS, Physics, Math">
+        </div>
+        <div>
+          <label for="f-date">Date</label>
+          <input id="f-date" type="date">
+        </div>
+      </div>
+      <div class="row3">
+        <div>
+          <label for="f-opt">Options per question</label>
+          <select id="f-opt">
+            <option value="2">2 &mdash; True / False</option>
+            <option value="4">4 &mdash; A&ndash;D</option>
+            <option value="5" selected>5 &mdash; A&ndash;E</option>
+            <option value="6">6 &mdash; A&ndash;F</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-count">Questions</label>
+          <input id="f-count" type="number" inputmode="numeric" min="1" max="200" value="20">
+        </div>
+        <div>
+          <label for="f-timer">Timer (minutes, opt.)</label>
+          <input id="f-timer" type="number" inputmode="numeric" min="0" max="600" placeholder="e.g. 30 (0 = off)">
+        </div>
+      </div>
+      <div class="actions" style="margin-top:20px">
+        <button class="primary" type="submit">Create session</button>
+        <button type="button" data-go="home">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- SESSION -->
+  <section id="v-sess" class="hidden">
+    <button class="back" data-go="home">&larr; All sessions</button>
+    <div id="ended-banner" class="ended-banner hidden">
+      <span>⏰ <strong>Time is up!</strong> The test has ended.</span>
+      <button type="button" class="time-btn" id="resume-time-btn">Add 5 mins / Unlock</button>
+    </div>
+    <div class="shead">
+      <div class="grow">
+        <h2 id="s-title"></h2>
+        <p class="tag" id="s-meta"></p>
+        <div id="timer-box" class="time-box hidden">
+          <span class="timer-pill" id="timer-display">⏱ --:--</span>
+          <button type="button" class="time-btn" id="timer-toggle-btn">Start</button>
+          <button type="button" class="time-btn" id="timer-reset-btn">Reset</button>
+        </div>
+        <p class="mono" id="score"></p>
+      </div>
+      <div class="actions">
+        <button id="edit-btn">Edit</button>
+        <button id="retake-btn">Retake</button>
+        <button id="check-btn">Check</button>
+      </div>
+    </div>
+    <hr class="rule">
+    <div id="rows"></div>
+    <p class="legend">
+      <strong>Desktop shortcuts:</strong> Press <span class="key-tip">A</span>&ndash;<span class="key-tip">E</span> to bubble, <span class="key-tip">&uarr;</span> / <span class="key-tip">&darr;</span> or <span class="key-tip">Enter</span> to move, <span class="key-tip">Backspace</span> / <span class="key-tip">0</span> to clear, <span class="key-tip">N</span> to toggle note.<br>
+      Tap a bubble to select or deselect. Answers are automatically saved.
+    </p>
+    <hr class="rule">
+    <div class="actions">
+      <button class="danger" id="del-btn">Delete session</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div id="edit-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Edit session</h2>
+    <form id="edit-form" novalidate>
+      <label for="e-title">Title</label>
+      <input id="e-title" autocomplete="off" required>
+      <div class="row2">
+        <div>
+          <label for="e-test">Subject / Tag</label>
+          <input id="e-test" autocomplete="off">
+        </div>
+        <div>
+          <label for="e-date">Date</label>
+          <input id="e-date" type="date">
+        </div>
+      </div>
+      <div class="row3">
+        <div>
+          <label for="e-opt">Options per question</label>
+          <select id="e-opt">
+            <option value="2">2 &mdash; True / False</option>
+            <option value="4">4 &mdash; A&ndash;D</option>
+            <option value="5">5 &mdash; A&ndash;E</option>
+            <option value="6">6 &mdash; A&ndash;F</option>
+          </select>
+        </div>
+        <div>
+          <label for="e-count">Questions</label>
+          <input id="e-count" type="number" inputmode="numeric" min="1" max="200">
+        </div>
+        <div>
+          <label for="e-timer">Timer (mins)</label>
+          <input id="e-timer" type="number" inputmode="numeric" min="0" max="600" placeholder="0 = off">
+        </div>
+      </div>
+      <div class="actions" style="margin-top:20px">
+        <button class="primary" type="submit">Save changes</button>
+        <button type="button" id="edit-cancel-btn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const LS='bubblesheet:sessions:v1', LETTERS=['A','B','C','D','E','F'], MAXQ=200;
+const $=s=>document.querySelector(s);
+let sessions=load(), cur=null, revealed=false, activeQ=0, filterTag='ALL';
+let timerInterval=null;
+const openNotes=new Set();
+
+function load(){try{return JSON.parse(localStorage.getItem(LS))||[]}catch{return[]}}
+function save(){try{localStorage.setItem(LS,JSON.stringify(sessions))}catch{alert('Could not save: browser storage is full or blocked.')}}
+const filled=a=>(a||[]).reduce((n,v)=>n+(v==null?0:1),0);
+const today=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
+
+function status(s,q){const k=s.key[q],a=s.answers[q];return k==null||a==null?'blank':(a===k?'good':'bad')}
+function counts(s){const t={good:0,bad:0,blank:0};
+  for(let q=0;q<s.count;q++)t[status(s,q)]++;return t}
+
+function pill(s){
+  const a=filled(s.answers), c=s.count;
+  const k=filled(s.key);
+  let timerTxt='';
+  if(s.timerDuration){
+    if(s.timeEnded) timerTxt=' · ended';
+    else if(s.timeLeft!=null) timerTxt=' · '+Math.ceil(s.timeLeft/60)+'m left';
+  }
+  if(k>0){
+    return ['answers '+a+'/'+c+' · key '+k+'/'+c+timerTxt, a===c&&k===c?'full':''];
+  }
+  return [(a===c?'completed ('+a+'/'+c+')':'answers '+a+'/'+c)+timerTxt, a===c?'full':''];
+}
+
+function stopTimer(){
+  if(timerInterval){clearInterval(timerInterval); timerInterval=null;}
+}
+
+function formatTime(sec){
+  if(sec<0) sec=0;
+  const m=Math.floor(sec/60);
+  const s=sec%60;
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+function updateTimerUI(){
+  if(!cur||!cur.timerDuration){
+    $('#timer-box').classList.add('hidden');
+    $('#ended-banner').classList.add('hidden');
+    return;
+  }
+  $('#timer-box').classList.remove('hidden');
+  const d=$('#timer-display');
+  const tb=$('#timer-toggle-btn');
+  d.textContent='⏱ '+formatTime(cur.timeLeft!=null?cur.timeLeft:cur.timerDuration);
+
+  d.classList.remove('running','warning','ended');
+  if(cur.timeEnded){
+    d.classList.add('ended');
+    tb.textContent='Start';
+    $('#ended-banner').classList.remove('hidden');
+  } else if(cur.timerRunning){
+    d.classList.add(cur.timeLeft<=60?'warning':'running');
+    tb.textContent='Pause';
+    $('#ended-banner').classList.add('hidden');
+  } else {
+    tb.textContent='Start';
+    $('#ended-banner').classList.add('hidden');
+  }
+}
+
+function startTimerTick(){
+  stopTimer();
+  if(!cur||!cur.timerDuration||!cur.timerRunning||cur.timeEnded) return;
+  timerInterval=setInterval(()=>{
+    if(!cur||!cur.timerRunning) return stopTimer();
+    if(cur.timeLeft>0){
+      cur.timeLeft--;
+      if(cur.timeLeft<=0){
+        cur.timeLeft=0;
+        cur.timerRunning=false;
+        cur.timeEnded=true;
+        stopTimer();
+        save();
+        renderSess();
+        return;
+      }
+      save();
+      updateTimerUI();
+    }
+  },1000);
+}
+
+function go(view){
+  stopTimer();
+  revealed=false;
+  for(const id of ['home','new','sess'])$('#v-'+id).classList.toggle('hidden',id!==view);
+  if(view==='home')renderHome();
+  scrollTo(0,0);
+}
+
+/* ---- home ---- */
+function renderHome(){
+  stopTimer();
+  const list=$('#list'); list.innerHTML='';
+  
+  // Extract unique tags/subjects
+  const tags=Array.from(new Set(sessions.map(s=>(s.testName||'').trim()).filter(Boolean))).sort();
+  const filterBar=$('#filter-bar');
+  if(tags.length>0){
+    filterBar.classList.remove('hidden');
+    let fHtml='<span class="filter-label">Filter:</span>';
+    fHtml+='<button class="tag-btn'+(filterTag==='ALL'?' active':'')+'" data-tag="ALL">All ('+sessions.length+')</button>';
+    tags.forEach(t=>{
+      const cnt=sessions.filter(s=>(s.testName||'').trim()===t).length;
+      fHtml+='<button class="tag-btn'+(filterTag===t?' active':'')+'" data-tag="'+t+'">'+t+' ('+cnt+')</button>';
+    });
+    filterBar.innerHTML=fHtml;
+  } else {
+    filterBar.classList.add('hidden');
+    filterTag='ALL';
+  }
+
+  const filtered = filterTag==='ALL'
+    ? sessions
+    : sessions.filter(s=>(s.testName||'').trim()===filterTag);
+
+  if(!filtered.length){
+    list.innerHTML='<p class="empty">'+(sessions.length?'No sessions matching this subject.':'No sessions yet. Create one to begin your test practice.')+'</p>';
+    return;
+  }
+
+  filtered.slice().sort((x,y)=>y.createdAt-x.createdAt).forEach(s=>{
+    const [txt,cls]=pill(s);
+    const b=document.createElement('button');
+    b.className='sess';
+    b.innerHTML='<span><span class="t"></span><span class="m"></span></span>'
+      +'<span class="badges">'
+      +(s.testName?'<span class="tag-pill"></span>':'')
+      +'<span class="pill '+cls+'"></span>'
+      +'</span>';
+    b.querySelector('.t').textContent=s.title;
+    const metaParts=[s.date, s.count+' questions'];
+    if(s.timerDuration) metaParts.push(Math.round(s.timerDuration/60)+'m timer');
+    b.querySelector('.m').textContent=metaParts.filter(Boolean).join(' · ');
+    if(s.testName) b.querySelector('.tag-pill').textContent=s.testName;
+    b.querySelector('.pill').textContent=txt;
+    b.onclick=()=>open(s.id);
+    list.appendChild(b);
+  });
+}
+
+$('#filter-bar').addEventListener('click',e=>{
+  const b=e.target.closest('.tag-btn');
+  if(!b)return;
+  filterTag=b.dataset.tag;
+  renderHome();
+});
+
+function open(id){
+  cur=sessions.find(s=>s.id===id)||null;
+  if(!cur)return go('home');
+  activeQ=0;
+  openNotes.clear();
+  go('sess');
+  renderSess();
+  if(cur.timerDuration&&cur.timerRunning&&!cur.timeEnded){
+    startTimerTick();
+  }
+}
+
+/* ---- session ---- */
+function group(field,s,q){
+  const sel=s[field][q], on=field==='answers', st=on&&revealed?status(s,q):'';
+  const bubbles=LETTERS.slice(0,s.optCount).map((L,o)=>
+    '<button type="button" class="b'+(sel===o?' on':'')+(st?' m-'+st:'')+'" data-f="'+field+'" data-q="'+q+'" data-o="'+o+
+    '" aria-pressed="'+(sel===o)+'" aria-label="Question '+(q+1)+' '+(on?'your answer':'answer key')+' option '+L+'">'+L+'</button>').join('');
+  const mark=st?'<span class="mk '+st+'">'+(st==='good'?'&#10003;':st==='bad'?'&#10005;':'&#8212;')+'</span>':'';
+  return '<div class="grp"><span class="glab">'+(on?'You':'Key')+'</span><span class="bub">'+bubbles+'</span>'+mark+'</div>';
+}
+
+function renderSess(){
+  if(!cur)return;
+  $('#s-title').textContent=cur.title;
+  const metaParts=[cur.testName, cur.date, cur.count+' questions', cur.optCount+' choices'];
+  if(cur.timerDuration) metaParts.push(Math.round(cur.timerDuration/60)+' min limit');
+  $('#s-meta').textContent=metaParts.filter(Boolean).join(' · ');
+  
+  const btn=$('#check-btn');
+  btn.textContent=revealed?'Hide check':'Check';
+  
+  const t=revealed?counts(cur):null;
+  $('#score').textContent=!revealed?''
+    : filled(cur.key)?t.good+' of '+cur.count+' correct · '+t.bad+' wrong · '+t.blank+' blank'
+    : 'Key not filled. Fill Key row to compare score.';
+  
+  $('#rows').classList.toggle('checked',revealed);
+  
+  if(!Array.isArray(cur.notes)) cur.notes=Array(cur.count).fill('');
+
+  let html='';
+  for(let q=0;q<cur.count;q++){
+    const hasNote=Boolean(cur.notes[q]&&cur.notes[q].trim());
+    const isNoteOpen=openNotes.has(q);
+    const isActive=q===activeQ;
+    html+='<div class="q'+(isActive?' active-q':'')+'" id="q-row-'+q+'" data-q="'+q+'">'
+        +'<span class="qn" title="Click to focus">'+(q+1)+'</span>'
+        +(revealed?group('key',cur,q):'')
+        +group('answers',cur,q)
+        +'<button type="button" class="note-btn'+(hasNote?' has-note':'')+'" data-note-q="'+q+'" title="Toggle question note">'
+        +(hasNote?'✎ Note':'Note')
+        +'</button>'
+        +(isNoteOpen
+          ? '<div class="note-box"><textarea class="note-input" data-note-field="'+q+'" placeholder="Write question note, rationale, or mistake review...">'+(cur.notes[q]||'')+'</textarea></div>'
+          : '')
+        +'</div>';
+  }
+  $('#rows').innerHTML=html;
+  updateTimerUI();
+}
+
+function scrollToActive(){
+  const row=$('#q-row-'+activeQ);
+  if(row){
+    row.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+// Timer controls
+$('#timer-toggle-btn').onclick=()=>{
+  if(!cur||!cur.timerDuration) return;
+  if(cur.timeEnded) return;
+  cur.timerRunning=!cur.timerRunning;
+  save();
+  updateTimerUI();
+  if(cur.timerRunning) startTimerTick();
+  else stopTimer();
+};
+
+$('#timer-reset-btn').onclick=()=>{
+  if(!cur||!cur.timerDuration) return;
+  if(!confirm('Reset timer to '+Math.round(cur.timerDuration/60)+' minutes?')) return;
+  cur.timeLeft=cur.timerDuration;
+  cur.timerRunning=false;
+  cur.timeEnded=false;
+  stopTimer();
+  save();
+  renderSess();
+};
+
+$('#resume-time-btn').onclick=()=>{
+  if(!cur) return;
+  cur.timeLeft=(cur.timeLeft||0)+300; // Add 5 minutes
+  cur.timeEnded=false;
+  cur.timerRunning=true;
+  save();
+  renderSess();
+  startTimerTick();
+};
+
+// Click handling inside rows
+$('#rows').addEventListener('click',e=>{
+  const qn=e.target.closest('.qn');
+  if(qn){
+    const row=qn.closest('.q');
+    if(row){
+      activeQ=+row.dataset.q;
+      renderSess();
+      return;
+    }
+  }
+
+  const nb=e.target.closest('button.note-btn');
+  if(nb){
+    const q=+nb.dataset.noteQ;
+    activeQ=q;
+    if(openNotes.has(q)) openNotes.delete(q);
+    else openNotes.add(q);
+    renderSess();
+    if(openNotes.has(q)){
+      const ta=$('#rows textarea[data-note-field="'+q+'"]');
+      if(ta) ta.focus();
+    }
+    return;
+  }
+
+  const b=e.target.closest('button.b');
+  if(!b||!cur)return;
+
+  // Lock answer changes if timer ended
+  if(cur.timeEnded && b.dataset.f==='answers'){
+    alert('Time has expired for this test. Click "Add 5 mins / Unlock" if you wish to continue.');
+    return;
+  }
+
+  const f=b.dataset.f, q=+b.dataset.q, o=+b.dataset.o;
+  activeQ=q;
+  cur[f][q]=cur[f][q]===o?null:o;
+  const i=sessions.indexOf(cur);
+  if(i>=0)sessions[i]=cur;
+  save();
+  renderSess();
+});
+
+// Update notes on input
+$('#rows').addEventListener('input',e=>{
+  if(!cur)return;
+  const ta=e.target.closest('textarea.note-input');
+  if(!ta)return;
+  const q=+ta.dataset.noteField;
+  if(!Array.isArray(cur.notes)) cur.notes=Array(cur.count).fill('');
+  cur.notes[q]=ta.value;
+  const i=sessions.indexOf(cur);
+  if(i>=0)sessions[i]=cur;
+  save();
+});
+
+// Keyboard shortcuts on session view
+window.addEventListener('keydown',e=>{
+  if(!cur||$('#v-sess').classList.contains('hidden'))return;
+  // If actively typing in a textarea or input, do not capture single key letters
+  if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))return;
+
+  const key=e.key.toUpperCase();
+  const optIdx=LETTERS.indexOf(key);
+
+  if(optIdx>=0&&optIdx<cur.optCount){
+    e.preventDefault();
+    if(cur.timeEnded){
+      alert('Time has expired for this test. Click "Add 5 mins / Unlock" if you wish to continue.');
+      return;
+    }
+    cur.answers[activeQ]=cur.answers[activeQ]===optIdx?null:optIdx;
+    const i=sessions.indexOf(cur);
+    if(i>=0)sessions[i]=cur;
+    save();
+    if(activeQ<cur.count-1) activeQ++;
+    renderSess();
+    scrollToActive();
+    return;
+  }
+
+  if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){
+    e.preventDefault();
+    if(cur.timeEnded) return;
+    cur.answers[activeQ]=null;
+    const i=sessions.indexOf(cur);
+    if(i>=0)sessions[i]=cur;
+    save();
+    renderSess();
+    return;
+  }
+
+  if(e.key==='ArrowDown'||e.key==='Enter'){
+    e.preventDefault();
+    if(activeQ<cur.count-1){
+      activeQ++;
+      renderSess();
+      scrollToActive();
+    }
+    return;
+  }
+
+  if(e.key==='ArrowUp'){
+    e.preventDefault();
+    if(activeQ>0){
+      activeQ--;
+      renderSess();
+      scrollToActive();
+    }
+    return;
+  }
+
+  if(key==='N'){
+    e.preventDefault();
+    if(openNotes.has(activeQ)) openNotes.delete(activeQ);
+    else openNotes.add(activeQ);
+    renderSess();
+    if(openNotes.has(activeQ)){
+      const ta=$('#rows textarea[data-note-field="'+activeQ+'"]');
+      if(ta) ta.focus();
+    }
+  }
+});
+
+$('#check-btn').onclick=()=>{revealed=!revealed; renderSess()};
+
+/* ---- Duplicate / Retake session ---- */
+$('#retake-btn').onclick=()=>{
+  if(!cur)return;
+  const defaultTitle=cur.title.includes('(Attempt')
+    ? cur.title.replace(/\(Attempt \d+\)/, `(Attempt ${Date.now().toString().slice(-2)})`)
+    : cur.title+' (Attempt 2)';
+  const newTitle=prompt('Title for retake attempt:', defaultTitle);
+  if(!newTitle)return;
+
+  const count=cur.count;
+  const newSession={
+    id:'sess_'+Date.now()+Math.random().toString(36).slice(2,7),
+    title:newTitle.trim(),
+    testName:cur.testName||'',
+    date:today(),
+    optCount:cur.optCount||5,
+    count:count,
+    timerDuration:cur.timerDuration||null,
+    timeLeft:cur.timerDuration||null,
+    timerRunning:Boolean(cur.timerDuration),
+    timeEnded:false,
+    key:[...(cur.key||Array(count).fill(null))],
+    answers:Array(count).fill(null),
+    notes:Array(count).fill(''),
+    createdAt:Date.now()
+  };
+  sessions.push(newSession);
+  save();
+  open(newSession.id);
+};
+
+/* ---- Edit Session Modal ---- */
+$('#edit-btn').onclick=()=>{
+  if(!cur)return;
+  $('#e-title').value=cur.title||'';
+  $('#e-test').value=cur.testName||'';
+  $('#e-date').value=cur.date||today();
+  $('#e-opt').value=cur.optCount||5;
+  $('#e-count').value=cur.count||20;
+  $('#e-timer').value=cur.timerDuration?Math.round(cur.timerDuration/60):'';
+  $('#edit-modal').classList.remove('hidden');
+};
+
+$('#edit-cancel-btn').onclick=()=>$('#edit-modal').classList.add('hidden');
+
+$('#edit-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  if(!cur)return;
+  const title=$('#e-title').value.trim();
+  if(!title){$('#e-title').focus();return}
+
+  const newCount=Math.min(MAXQ,Math.max(1,parseInt($('#e-count').value,10)||cur.count));
+  const newOpt=+$('#e-opt').value;
+  const timerMins=parseInt($('#e-timer').value,10);
+  const newDuration=(timerMins&&timerMins>0)?timerMins*60:null;
+
+  cur.title=title;
+  cur.testName=$('#e-test').value.trim();
+  cur.date=$('#e-date').value||today();
+  cur.optCount=newOpt;
+
+  if(newDuration!==cur.timerDuration){
+    cur.timerDuration=newDuration;
+    cur.timeLeft=newDuration;
+    cur.timerRunning=Boolean(newDuration);
+    cur.timeEnded=false;
+  }
+
+  // Resize arrays if count changed
+  if(newCount!==cur.count){
+    const resize=(arr,def)=>Array(newCount).fill(null).map((_,i)=>i<arr.length?arr[i]:def);
+    cur.key=resize(cur.key||[],null);
+    cur.answers=resize(cur.answers||[],null);
+    cur.notes=resize(cur.notes||[],'');
+    cur.count=newCount;
+    if(activeQ>=newCount) activeQ=newCount-1;
+  }
+
+  // Clear answers beyond new option count
+  cur.answers=cur.answers.map(a=>(a!=null&&a>=newOpt)?null:a);
+  if(cur.key) cur.key=cur.key.map(k=>(k!=null&&k>=newOpt)?null:k);
+
+  const i=sessions.indexOf(cur);
+  if(i>=0)sessions[i]=cur;
+  save();
+  $('#edit-modal').classList.add('hidden');
+  renderSess();
+  if(cur.timerRunning&&!cur.timeEnded) startTimerTick();
+  else stopTimer();
+});
+
+$('#del-btn').onclick=()=>{
+  if(!cur||!confirm('Delete "'+cur.title+'"? This cannot be undone.'))return;
+  stopTimer();
+  sessions=sessions.filter(s=>s.id!==cur.id); save(); go('home');
+};
+
+/* ---- new session ---- */
+$('#new-btn').onclick=()=>{ $('#f-date').value=today(); $('#f-timer').value=''; go('new') };
+$('#new-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const title=$('#f-title').value.trim(); if(!title){$('#f-title').focus(); return}
+  const count=Math.min(MAXQ,Math.max(1,parseInt($('#f-count').value,10)||20));
+  const timerMins=parseInt($('#f-timer').value,10);
+  const timerDuration=(timerMins&&timerMins>0)?timerMins*60:null;
+
+  const s={
+    id:'sess_'+Date.now()+Math.random().toString(36).slice(2,7),
+    title,
+    testName:$('#f-test').value.trim(),
+    date:$('#f-date').value||today(),
+    optCount:+$('#f-opt').value,
+    count,
+    timerDuration,
+    timeLeft:timerDuration,
+    timerRunning:Boolean(timerDuration),
+    timeEnded:false,
+    key:Array(count).fill(null),
+    answers:Array(count).fill(null),
+    notes:Array(count).fill(''),
+    createdAt:Date.now()
+  };
+  sessions.push(s); save(); open(s.id);
+});
+
+/* ---- backup ---- */
+$('#export-btn').onclick=()=>{
+  const url=URL.createObjectURL(new Blob([JSON.stringify(sessions,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');
+  a.href=url; a.download='bubble-sheet-sessions.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+$('#import-btn').onclick=()=>$('#import-file').click();
+$('#import-file').onchange=async e=>{
+  const f=e.target.files[0]; if(!f)return;
+  e.target.value='';
+  try{
+    const data=JSON.parse(await f.text());
+    if(!Array.isArray(data))throw new Error('not a list');
+    const have=new Set(sessions.map(s=>s.id));
+    let n=0;
+    for(const s of data){
+      if(!s||typeof s!=='object'||have.has(s.id))continue;
+      s.key=Array.isArray(s.key)?s.key:[];
+      s.answers=Array.isArray(s.answers)?s.answers:[];
+      s.notes=Array.isArray(s.notes)?s.notes:[];
+      s.timerDuration=s.timerDuration>0?+s.timerDuration:null;
+      s.timeLeft=s.timeLeft!=null?+s.timeLeft:s.timerDuration;
+      s.timeEnded=Boolean(s.timeEnded);
+      s.timerRunning=Boolean(s.timerRunning && !s.timeEnded);
+      s.count=Math.min(MAXQ,Math.max(1,+s.count||s.key.length||1));
+      s.optCount=[2,4,5,6].includes(+s.optCount)?+s.optCount:5;
+      sessions.push(s); have.add(s.id); n++;
+    }
+    save(); go('home');
+    alert(n?n+' session'+(n===1?'':'s')+' imported.':'Nothing new to import (all sessions already present).');
+  }catch{alert('That file could not be read as a Bubble Sheet backup.')}
+};
+
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go)});
+
+// self-check
+console.assert(status({key:[0,null],answers:[0,1]},0)==='good'&&status({key:[0,null],answers:[0,1]},1)==='blank','status: equal / missing key');
+console.assert(status({key:[0],answers:[1]},0)==='bad','status: mismatch');
+console.assert(counts({key:[0,0,0],answers:[0,1,null],count:3}).good===1,'counts');
+console.assert(pill({key:[0,null],answers:[0,null],count:2})[0]==='answers 1/2 · key 1/2','pill');
+})();
+</script>
+</body>
+</html>
